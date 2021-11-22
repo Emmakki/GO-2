@@ -59,7 +59,12 @@ func main() {
 		m[lien[1]] = append(m[lien[1]], lien)
 		// exemple : le tableau de "B" va être creer à l'itération 1, ensuite il va être rempli avec le lien 1 ET à l'itération 2 et 3 on va l'agrendir en lui mettant le lien 2 et le lien 3
 		// B :[[lien1][lien2][lien3]]
-	}
+	
 
 	fmt.Println("\nmap : <<sommet et liens>> a envoyer : \n", m)
+	
+
+	
+
+	}
 }
