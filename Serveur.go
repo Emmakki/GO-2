@@ -108,7 +108,7 @@ func Dijkstra(depart int, g []elementGraph, wg *sync.WaitGroup, dataCh chan<- da
 
 	//Implémentation du tableau final
 	for i := range noeuds {
-		tabD[noeuds[i]] = chemin{-1, 0}
+		tabD[noeuds[i]] = chemin{-1, 0}//-1 pour dire que le noeud n'a pas de noeud parent
 	}
 	//fmt.Print(tabD, "\n")
 
@@ -120,7 +120,7 @@ func Dijkstra(depart int, g []elementGraph, wg *sync.WaitGroup, dataCh chan<- da
 			}
 		}
 
-		if len(voisins(g, somActuel, sommetParcouru)) != 0 {
+		if len(voisins(g, somActuel, sommetParcouru)) > 1 {
 			prec = somActuel
 			somActuel = minimum(g, somActuel, sommetParcouru)
 			//fmt.Print(prec, somActuel, "\n")
