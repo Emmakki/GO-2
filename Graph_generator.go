@@ -24,6 +24,7 @@ func getArgs() (int, string) {
 	} else {
 		//récupère le nom du fichier et vérifie que le fichier existe bien
 		size, err := strconv.Atoi(os.Args[1])
+		size=size+1
 		if err != nil {
 			fmt.Printf("Vous devez utiliser le générateur ainsi : go run rand.go <size>\n")
 			os.Exit(1) //sinon exit
@@ -41,13 +42,6 @@ func getArgs() (int, string) {
 func randWeight(min, max int) int {
 	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return min + rand.Intn(max-min)
-}
-
-//Génère une "lettre" aléatoire de l'alphabet (soit un entier aléatoire entre 0 et size)
-func randLetter(alphabet []int) int {
-	rand.NewSource(time.Now().UnixNano())
-	//liste des noeuds possibles
-	return alphabet[rand.Intn(len(alphabet))] //je prends une "lettre" aléatoire dans l'objet alphabet
 }
 
 //Supprime l'élement à l'index s du slice donné en entrée
@@ -93,50 +87,52 @@ func generator(size int) string { //param : nb de lien voulu
 	//contient la liste des lettres de l'alphabet pour lesquels il reste des voisins à tirer
 	var from, to int
 	var toWrite string //noeud de départ -> noeud d'arrivé -> résultat de la fonction
-	run := true        //initialisation de booléens
+	n := 0
 	reste := alphabet
-	for i := 0; i < size && run; i++ { //si run autorisé et tant que i<size voulu,
-		//alea := rand.Float64()  //take pseudo-random number in [0.0,1.0)
-		if i%3 == 0 { //50% du temps on change de point de départ sinon on garde le meme point pour faire un graph un peu plus fournis (le draw =true du dessus permet de forcement choisir un point sur la première boucle)
-			//println("Nouvelle lettre de départ") DEBUG
-			from = randLetter(reste)
+	for k := 1; k < len(reste); k++ {
+		var taille int
+		from = reste[n]
+		 //[0 1 2 3 4]
+		if len(neighb[from]) > 3 {
+			taille = 3
+		} else {
+			taille = len(neighb[from])
 		}
-		to = randLetter(neighb[from])
-		if len(neighb[from]) > 1 {
-			neighb[from] = remove_element(neighb[from], to) // retrait de la lettre que je viens de prendre de la liste des points accessibles par le départ
-			//	fmt.Printf("TO n'est pas le dernier de %v, retrait de la liste from : %v \n", from,neighb[from]) DEBUG
+		for i := 0; i < taille; i++ {
+
+			fmt.Print(neighb[from])
+			to = neighb[from][0]
+			//fmt.Print(to,"\n")
+			if len(neighb[from]) > 1 {
+				neighb[from] = remove_element(neighb[from], to)
+			}
 			if len(neighb[to]) > 1 {
-				neighb[to] = remove_element(neighb[to], from) // retrait de l'inverse selon les memes conditions
-			} else {
-				reste = remove_element(reste, to) // si les voisins possibles de l'arrivée sont nuls, alors on ne peux pas le prendre comme départ, je le supprime de la liste des départs possibles
+				neighb[to] = remove_element(neighb[to], from)
+				fmt.Print(neighb[to], "\n") // retrait de l'inverse selon les memes conditions
 			}
-		} else { //Si il n'y a plus de voisins au départ
-			if len(reste) > 1 { // Mais que ce n'est pas le dernier départ de la liste alors
-				reste = remove_element(reste, from) // Je le retire de la liste des départs
-				if len(neighb[to]) > 1 {
-					neighb[to] = remove_element(neighb[to], from) // retrait de son reverse
-				} else {
-					remove_element(reste, to) // même chose que plus haut
-				}
-				//je précise que je dois tirer un nouveau from
-			} else { // Si c'est le dernier départ alors on stop
-				run = false
+
+			weight := randWeight(1, 5)
+			if k%2 == 0 {
+				weight = randWeight(1, 9)
 			}
+			if k%3 == 0 {
+				weight = randWeight(9, 16)
+			}
+
+			toWrite += fmt.Sprintf("%d %d %d\n", from, to, weight)
+
+			//toWrite += fmt.Sprintf("%d %d %d\n", to, from, weight) //j'ai ajouté cette ligne pour la fonction voisins dans serveur
 		}
-		weight := randWeight(1, 5)
-		if i%2 == 0 {
-			weight = randWeight(1, 9)
-		}
-		if i%3 == 0 {
-			weight = randWeight(9, 16)
-		}
-		toWrite += fmt.Sprintf("%d %d %d\n", from, to, weight)
-		toWrite += fmt.Sprintf("%d %d %d\n", to, from, weight) //j'ai ajouté cette ligne pour la fonction voisins dans serveur
-	
+		n+=1
 	}
 	toWrite += ". . ."
 
 	return toWrite
+}
+func randLetter(alphabet []int) int {
+	rand.NewSource(time.Now().UnixNano())
+	//liste des noeuds possibles
+	return alphabet[rand.Intn(len(alphabet))] //je prends une "lettre" aléatoire dans l'objet alphabet
 }
 
 // fonction principale qui à pour rôle d'écrire le graph d'une taille donnée dans un fichier à un path donné
@@ -152,7 +148,7 @@ func writeGraph(size int, path string) {
 	if err != nil { //Si l'erreur est non nulle l'afficher
 		log.Println(err)
 	}
-	defer f.Close()                                             //L'utilisation de defer sur Close permet de s'assurer que le fichier se fermera quand toutes les actions seront effectuées
+	defer f.Close()                                           //L'utilisation de defer sur Close permet de s'assurer que le fichier se fermera quand toutes les actions seront effectuées
 	if _, err := f.WriteString(generator(size)); err != nil { //On écrit dans le fichier le résultat de la fonction generateTie en fonction de la taille de graph voulue, seulement si cette écriture ne produit pas d'erreur
 		log.Println(err) //Sinon afficher l'erreur
 	}

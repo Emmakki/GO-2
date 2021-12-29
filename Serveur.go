@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	
 	"os"
 	"sort"
 	"strconv"
@@ -77,7 +78,6 @@ func main() {
 
 			break // pour une sortie de fichier en EOF (. . .)
 		}
-
 	}
 
 	noeuds = unique(noeuds) //pour avoir un tableau contenant un exemplaire de tous les noeuds de notre graph
@@ -99,71 +99,80 @@ func Dijkstra(depart int, g []elementGraph, wg *sync.WaitGroup, dataCh chan<- da
 	//exemple de graphe:
 	defer wg.Done()
 	sommetParcouru := make(map[int]int) //stock les int des sommets par lesquels on ne peut plus passer
-	sommetParcouru[0] = depart
+    sommetParcouru[0] = depart
 
-	tabD := make(map[int]chemin) //création tu tableau final
+    tabD := make(map[int]chemin) //création tu tableau final
+    //noeuds := toutSommets(g)
+    var somActuel int = depart
+    //var prec int
 
-	var somActuel int = depart
-	var prec int
+    //Implémentation du tableau final
+    for i := range noeuds {
+        tabD[noeuds[i]] = chemin{-1, 0}
+    }
+    //tabD[depart] = chemin{0, 0}
+    //fmt.Print(tabD, "\n")
 
-	//Implémentation du tableau final
-	for i := range noeuds {
-		tabD[noeuds[i]] = chemin{-1, 0}//-1 pour dire que le noeud n'a pas de noeud parent
-	}
-	//fmt.Print(tabD, "\n")
+    for i := 1; i < len(noeuds); i++ {
 
-	for i := 1; i < len(noeuds); i++ {
+        somVoisin := voisins(g, somActuel, sommetParcouru)
+        //fmt.Print(somVoisin, "\n")
 
-		for _, v := range voisins(g, somActuel, sommetParcouru) {
-			if !exist(sommetParcouru, v) && (tabD[v].weight == 0 || tabD[v].weight > tabD[somActuel].weight+poids(g, somActuel, v)) {
-				tabD[v] = chemin{somActuel, tabD[somActuel].weight + poids(g, somActuel, v)}
-			}
-		}
+        for _, v := range somVoisin {
+            if !exist(sommetParcouru, v) && (tabD[v].weight == 0 || tabD[v].weight > tabD[somActuel].weight+poids(g, somActuel, v)) {
+                tabD[v] = chemin{somActuel, tabD[somActuel].weight + poids(g, somActuel, v)}
+                //fmt.Print(tabD, "\n")
+            }
+        }
 
-		if len(voisins(g, somActuel, sommetParcouru)) > 1 {
-			prec = somActuel
-			somActuel = minimum(g, somActuel, sommetParcouru)
-			//fmt.Print(prec, somActuel, "\n")
-		} else {
-			somActuel = minimum(g, prec, sommetParcouru)
-			//fmt.Print(prec, somActuel, "\n")
-		}
+        if len(somVoisin) != 0 {
+            //prec = somActuel
+            somActuel = minimum(g, somActuel, sommetParcouru)
+            //fmt.Print(prec, somActuel, "\n")
+        } else {
+            if !toutSommetsParcouru(noeuds, sommetParcouru) {
+                for i := range noeuds {
+                    if exist(sommetParcouru, noeuds[i]) && len(voisins(g, noeuds[i], sommetParcouru)) != 0 {
+                        //fmt.Print(voisins(g, noeuds[i], sommetParcouru))
+                        somActuel = minimum(g, noeuds[i], sommetParcouru)
+                        break
+                    }
+                }
+            }
+        }
 
-		sommetParcouru[i] = somActuel
-		//fmt.Print(sommetParcouru, "\n")
+        sommetParcouru[i] = somActuel
+        //fmt.Print(sommetParcouru, "\n")
 
-		if toutSommetsParcouru(noeuds, sommetParcouru) {
-			//fmt.Print(toutSommetsParcouru(noeuds, sommetParcouru), "\n")
-			break
-		}
-	}
-	///fmt.Print("Les sommets:", noeuds, "\n")
-	//fmt.Print(tabD, "\n")
+        if toutSommetsParcouru(noeuds, sommetParcouru) {
+            break
+        }
+    }
 
-	//Retrouver le chemin pour tout les noeuds jusqu'au point de départ
-	//Structure à renvoyer: map[{to from}]{[]int(chemin)} + map [to]int(distancemin)
-	toutChemins := make(map[int][]int)
-	distanceMin := make(map[int]int)
-	for i := 0; i < len(noeuds); i++ {
-		noeud := noeuds[i]
-		//fmt.Print(noeud, ": \n")
-		distanceMin[noeud] = tabD[noeud].weight
-		toutChemins[noeud] = append(toutChemins[noeud], noeud)
-		noeudPrec := noeud
-		for tabD[noeudPrec].from != -1 {
-			toutChemins[noeud] = append(toutChemins[noeud], tabD[noeudPrec].from)
-			//fmt.Print(tabD[noeudPrec].from, "\n")
-			noeudPrec = tabD[noeudPrec].from
+    //fmt.Print("Les sommets:", noeuds, "\n")
+    //fmt.Print(tabD, "\n")
+//Retrouver le chemin pour tout les noeuds jusqu'au point de départ
+    //Structure à renvoyer: map[{to from}]{[]int(chemin)} + map [to]int(distancemin)
+    toutChemins := make(map[int][]int)
+    distanceMin := make(map[int]int)
+    for i := 0; i < len(noeuds); i++ {
+        noeud := noeuds[i]
+        //fmt.Print(noeud, ": \n")
+        distanceMin[noeud] = tabD[noeud].weight
+        toutChemins[noeud] = append(toutChemins[noeud], noeud)
+        noeudPrec := noeud
 
-		}
-	}
-	toutChemins = renverse(toutChemins)
-	distances := distanceMin
-	routes := toutChemins
-	dataCh <- data{depart, routes, distances}
+        for tabD[noeudPrec].from != -1 {
+            toutChemins[noeud] = append(toutChemins[noeud], tabD[noeudPrec].from)
+            //fmt.Print(tabD[noeudPrec].from, "\n")
+            noeudPrec = tabD[noeudPrec].from
+        }
 
+    }
+    toutChemins = renverse(toutChemins)
+    //fmt.Print("Pour chaque noeud chemin à prendre:", toutChemins, "\n")
+    //fmt.Print("distance du plus court chemin pour chaque noeud:", distanceMin, "\n")
 }
-
 func djikstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int, map[int]map[int]int) {
 	datach := make(chan data)
 	done := make(chan bool)
