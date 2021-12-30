@@ -24,7 +24,7 @@ func getArgs() (int, string) {
 	} else {
 		//récupère le nom du fichier et vérifie que le fichier existe bien
 		size, err := strconv.Atoi(os.Args[1])
-		size=size+1
+		//size=size+1
 		if err != nil {
 			fmt.Printf("Vous devez utiliser le générateur ainsi : go run rand.go <size>\n")
 			os.Exit(1) //sinon exit
@@ -101,7 +101,7 @@ func generator(size int) string { //param : nb de lien voulu
 		for i := 0; i < taille; i++ {
 
 			fmt.Print(neighb[from])
-			to = neighb[from][0]
+			to = randLetter(neighb[from])
 			//fmt.Print(to,"\n")
 			if len(neighb[from]) > 1 {
 				neighb[from] = remove_element(neighb[from], to)
@@ -121,7 +121,7 @@ func generator(size int) string { //param : nb de lien voulu
 
 			toWrite += fmt.Sprintf("%d %d %d\n", from, to, weight)
 
-			//toWrite += fmt.Sprintf("%d %d %d\n", to, from, weight) //j'ai ajouté cette ligne pour la fonction voisins dans serveur
+			toWrite += fmt.Sprintf("%d %d %d\n", to, from, weight) //j'ai ajouté cette ligne pour la fonction voisins dans serveur
 		}
 		n+=1
 	}

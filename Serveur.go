@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	
 	"os"
 	"sort"
 	"strconv"
@@ -40,7 +39,6 @@ func unique(slice []int) []int {
 	}
 	return list //on retourne notre tableau avec les noeuds uniques
 }
-
 
 func main() {
 
@@ -78,102 +76,119 @@ func main() {
 
 			break // pour une sortie de fichier en EOF (. . .)
 		}
+
 	}
 
 	noeuds = unique(noeuds) //pour avoir un tableau contenant un exemplaire de tous les noeuds de notre graph
 	sort.Ints(noeuds)
 	debut := time.Now()
-	fmt.Println(djikstra_routine(slice,noeuds))
+	fmt.Println(dijkstra_routine(slice,noeuds))
 	fin := time.Now()
 	fmt.Println(fin.Sub(debut))
-}
 
+}
 
 //Cette fonction permet de récupérer tous les voisins de tous les noeuds
 // La fonction retourne un map on peut donc appeler la liste des noeuds visins facilement
 
-
 var wg sync.WaitGroup
 
-func Dijkstra(depart int, g []elementGraph, wg *sync.WaitGroup, dataCh chan<- data, noeuds []int) {
+func Dijkstra(depart int, g []elementGraph, wg *sync.WaitGroup, dataCh chan<- data, noeuds []int) { {
 	//exemple de graphe:
 	defer wg.Done()
 	sommetParcouru := make(map[int]int) //stock les int des sommets par lesquels on ne peut plus passer
-    sommetParcouru[0] = depart
+	sommetParcouru[0] = depart
 
-    tabD := make(map[int]chemin) //création tu tableau final
-    //noeuds := toutSommets(g)
-    var somActuel int = depart
-    //var prec int
+	tabD := make(map[int]chemin) //création tu tableau final
+	//noeuds := toutSommets(g)
+	var somActuel int = depart
+	//var prec int
 
-    //Implémentation du tableau final
-    for i := range noeuds {
-        tabD[noeuds[i]] = chemin{-1, 0}
-    }
-    //tabD[depart] = chemin{0, 0}
-    //fmt.Print(tabD, "\n")
+	voisin := toutLesVoisins(g, noeuds)
 
-    for i := 1; i < len(noeuds); i++ {
+	//Implémentation du tableau final
+	for i := range noeuds {
+		tabD[noeuds[i]] = chemin{-1, 0}
+	}
+	//tabD[depart] = chemin{0, 0}
+	//fmt.Print("tabD", tabD, "\n")
 
-        somVoisin := voisins(g, somActuel, sommetParcouru)
-        //fmt.Print(somVoisin, "\n")
+	for i := 1; i < len(noeuds); i++ {
 
-        for _, v := range somVoisin {
-            if !exist(sommetParcouru, v) && (tabD[v].weight == 0 || tabD[v].weight > tabD[somActuel].weight+poids(g, somActuel, v)) {
-                tabD[v] = chemin{somActuel, tabD[somActuel].weight + poids(g, somActuel, v)}
-                //fmt.Print(tabD, "\n")
-            }
-        }
+		//somVoisin := voisins(g, somActuel, sommetParcouru)
+		//fmt.Print(somVoisin, "\n")
 
-        if len(somVoisin) != 0 {
-            //prec = somActuel
-            somActuel = minimum(g, somActuel, sommetParcouru)
-            //fmt.Print(prec, somActuel, "\n")
-        } else {
-            if !toutSommetsParcouru(noeuds, sommetParcouru) {
-                for i := range noeuds {
-                    if exist(sommetParcouru, noeuds[i]) && len(voisins(g, noeuds[i], sommetParcouru)) != 0 {
-                        //fmt.Print(voisins(g, noeuds[i], sommetParcouru))
-                        somActuel = minimum(g, noeuds[i], sommetParcouru)
-                        break
-                    }
-                }
-            }
-        }
+		for _, v := range voisin[somActuel] {
+			fmt.Print("sommet actuel", somActuel, "\n")
+			if !exist(sommetParcouru, v.to) && (tabD[v.to].weight == 0 || tabD[v.to].weight > tabD[somActuel].weight+v.weight /*poids(g, somActuel, v.to)*/) {
+				tabD[v.to] = chemin{somActuel, tabD[somActuel].weight + v.weight}
+				//fmt.Print("tabD[v.to]  ", tabD[v.to], "\n") /*poids(g, somActuel, v.to)*/
 
-        sommetParcouru[i] = somActuel
-        //fmt.Print(sommetParcouru, "\n")
+				//fmt.Print("tabD", tabD, "\n")
+			}
+		}
 
-        if toutSommetsParcouru(noeuds, sommetParcouru) {
-            break
-        }
-    }
+		if left_neighbors(somActuel,voisin,sommetParcouru) != 0 {
+		
+			somActuel = minimum(somActuel, sommetParcouru, voisin)
+		}else {
+		
+			for i := range noeuds {
+				if exist(sommetParcouru, noeuds[i]) && left_neighbors(noeuds[i],voisin,sommetParcouru) != 0 {
+					//fmt.Print(voisins(g, noeuds[i], sommetParcouru))
+					somActuel = minimum( noeuds[i], sommetParcouru, voisin)
+					break
+				}
+			}
+		
+		}
 
-    //fmt.Print("Les sommets:", noeuds, "\n")
-    //fmt.Print(tabD, "\n")
-//Retrouver le chemin pour tout les noeuds jusqu'au point de départ
-    //Structure à renvoyer: map[{to from}]{[]int(chemin)} + map [to]int(distancemin)
-    toutChemins := make(map[int][]int)
-    distanceMin := make(map[int]int)
-    for i := 0; i < len(noeuds); i++ {
-        noeud := noeuds[i]
-        //fmt.Print(noeud, ": \n")
-        distanceMin[noeud] = tabD[noeud].weight
-        toutChemins[noeud] = append(toutChemins[noeud], noeud)
-        noeudPrec := noeud
+	
 
-        for tabD[noeudPrec].from != -1 {
-            toutChemins[noeud] = append(toutChemins[noeud], tabD[noeudPrec].from)
-            //fmt.Print(tabD[noeudPrec].from, "\n")
-            noeudPrec = tabD[noeudPrec].from
-        }
+		sommetParcouru[i] = somActuel
+		//fmt.Print("sommetparcouru", sommetParcouru, "\n")
 
-    }
-    toutChemins = renverse(toutChemins)
-    //fmt.Print("Pour chaque noeud chemin à prendre:", toutChemins, "\n")
-    //fmt.Print("distance du plus court chemin pour chaque noeud:", distanceMin, "\n")
+		if toutSommetsParcouru(noeuds, sommetParcouru) {
+			break
+		}
+	}
+
+	fmt.Print("Les sommets:", noeuds, "\n")
+	fmt.Print("tabD", tabD, "\n")
+
+	//Retrouver le chemin pour tout les noeuds jusqu'au point de départ
+	//Structure à renvoyer: map[{to from}]{[]int(chemin)} + map [to]int(distancemin)
+	toutChemins := make(map[int][]int)
+	distanceMin := make(map[int]int)
+	for i := 0; i < len(noeuds); i++ {
+		noeud := noeuds[i]
+		fmt.Print("noeud", noeud, ": \n")
+		distanceMin[noeud] = tabD[noeud].weight
+		fmt.Print("tabD [[noeud].Weight]", distanceMin[noeud], "\n")
+		toutChemins[noeud] = append(toutChemins[noeud], noeud)
+		noeudPrec := noeud
+
+		for tabD[noeudPrec].from != -1 {
+			toutChemins[noeud] = append(toutChemins[noeud], tabD[noeudPrec].from)
+
+			//fmt.Print(tabD[noeudPrec].from, "\n")
+			noeudPrec = tabD[noeudPrec].from
+		}
+
+	}
+	toutChemins = renverse(toutChemins)
+	fmt.Print("Pour chaque noeud chemin à prendre:", toutChemins, "\n")
+	fmt.Print("distance du plus court chemin pour chaque noeud:", distanceMin, "\n")
+
+	distances := distanceMin
+	routes := toutChemins
+	//return distanceMin,toutChemins
+	dataCh <- data{depart, routes, distances}
 }
-func djikstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int, map[int]map[int]int) {
+
+}
+
+func dijkstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int, map[int]map[int]int) {
 	datach := make(chan data)
 	done := make(chan bool)
 	dijk := make(map[int]map[int][]int)
@@ -187,8 +202,11 @@ func djikstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int
 		done <- true //this is used to wait until all data has been read from the channel
 	}()
 	wg.Add(len(noeuds))
+	i := 0
 	for _, node := range noeuds {
+		fmt.Print(i, "\n")
 		go Dijkstra(node, graph, &wg, datach, noeuds)
+		i++
 	} //
 
 	wg.Wait()
@@ -198,16 +216,44 @@ func djikstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int
 	return dijk, distance
 
 }
-func voisins(graph []elementGraph, sommet int, sommetParcouru map[int]int) map[int]int {
-	voisin := make(map[int]int)
-	i := 0
-	for _, s := range graph {
-		if sommet == s.from && !exist(sommetParcouru, s.to) {
-			voisin[i] = s.to
-			i++
+
+
+func left_neighbors(somActuel int, voisin map[int][]elementGraph, sommetParcouru map[int]int) int {
+	nb_voisin:=0
+	for _, s := range voisin[somActuel] {
+		if !exist(sommetParcouru,s.to){
+			nb_voisin+=1
 		}
+
+	}
+	return nb_voisin
+}
+
+func Voisins(sommet int, g []elementGraph) []elementGraph { //[{1 2 6} {1 3 4} {1 8 12} … ]
+	var voisin []elementGraph
+	for _, s := range g {
+		if s.from == sommet {
+			voisin = append(voisin, s)
+		}
+
+		/*//Si graphe non orienté décommenter ça
+		if s.to == sommet {
+			var sr elementGraph = elementGraph{s.to, s.from, s.weight}
+			voisin = append(voisin, sr)
+		}
+		*/
 	}
 	return voisin
+}
+
+//Cette fonction permet de récupérer tous les voisins de tous les noeuds
+// La fonction retourne un map on peut donc appeler la liste des noeuds visins facilement
+func toutLesVoisins(g []elementGraph, noeuds []int) map[int][]elementGraph { // [1] : [{1 2 6} {1 3 4} {1 8 12} … ], [2] : [ { … } …]
+	toutVoisins := make(map[int][]elementGraph) //instantiation
+	for _, noeud := range noeuds {              // parcours la liste des noeuds qui existe
+		toutVoisins[noeud] = Voisins(noeud, g) // Ajout de la liste des voisins au map
+	}
+	return toutVoisins
 }
 
 func toutSommetsParcouru(sommet []int, sommetParcouru map[int]int) bool {
@@ -221,8 +267,6 @@ func toutSommetsParcouru(sommet []int, sommetParcouru map[int]int) bool {
 
 }
 
-
-
 func exist(tab map[int]int, valeur int) bool {
 	var existe bool = false
 	for i := 0; i < len(tab); i++ {
@@ -233,30 +277,31 @@ func exist(tab map[int]int, valeur int) bool {
 	return existe
 }
 
-func minimum(g []elementGraph, sommet int, sommetParcouru map[int]int) int {
-	min := poids(g, sommet, voisins(g, sommet, sommetParcouru)[0])
-	suivant := voisins(g, sommet, sommetParcouru)[0]
-	for _, s := range g {
-		if s.from == sommet && !exist(sommetParcouru, s.to) {
-			if s.weight < min {
-				min = s.weight
-				suivant = s.to
-			}
-		}
+func minimum(sommet int, sommetParcouru map[int]int, voisin map[int][]elementGraph) int {
+	min := voisin[sommet][0].weight
+	suivant := voisin[sommet][0].to
+	for _, v := range voisin[sommet] {
+        if !exist(sommetParcouru, v.to) {
+            min = v.weight
+            suivant = v.to
+            break
+        }
+    }
 
-	}
-	return suivant
+    for _,s := range voisin[sommet] {
+        if !exist(sommetParcouru, s.to) {
+            if s.weight < min {
+                min = s.weight
+                suivant = s.to
+            }
+        }
+
+    }
+    return suivant
 }
 
-func poids(graph []elementGraph, depart int, arrive int) int {
-	var poid int
-	for _, s := range graph {
-		if s.from == depart && s.to == arrive {
-			poid = s.weight
-		}
-	}
-	return poid
-}
+
+
 
 func renverse(tab map[int][]int) map[int][]int {
 	tabR := make(map[int][]int)
@@ -267,5 +312,4 @@ func renverse(tab map[int][]int) map[int][]int {
 		}
 	}
 	return tabR
-
 }
