@@ -125,12 +125,14 @@ func dijkstra_routine(graph []elementGraph, noeuds []int) (map[int]map[int][]int
 			dijk[d.depart] = d.routes
 			distance[d.depart] = d.distances
 		}
-		done <- true //this is used to wait until all data has been read from the channel
+		done <- true //c'est pour attendre que tous les données soient lu du channel
+	
 	}()
 
 	wg.Wait()
-	close(datach) //this closes the dataCh channel, which will make the for-range loop exit once all the data has been read
-	<-done        //we wait for all of the data to get read and put into maps
+	close(datach) //ici on ferme le channel ce qui permet de sortir de la boucle for une fois toutes les données sont lus
+	
+	<-done        // on attend que tous les données sont lu et stocké dans les map .
 
 	return dijk, distance
 
