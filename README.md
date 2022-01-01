@@ -18,7 +18,7 @@ Implémentation d'algorithme du Dijkstra détaillé (éxecuté par le serveur):
 
 /**Structure utilisé:**/
 
-Pour éxecuter cette algorithme nous allons utiliser deux structures facilitant le calcul. 
+Pour éxecuter cette algorithme nous allons utiliser trois structures facilitant le calcul. 
 
 ****************************************************************************
     type elementGraph struct { 
@@ -37,7 +37,7 @@ Pour éxecuter cette algorithme nous allons utiliser deux structures facilitant 
 	distances map[int]int
 }
 *****************************************************************************
-La structure elementGraph nous permet de constituer notre graphe à analyser. Elle contitue un lien avec le sommet d'où il part (from), le sommet d'arrivé (to) et le poids/distance entre ces deux sommets (weight).
+La structure elementGraph nous permet de constituer notre graphe à analyser. Elle constitue un lien avec le sommet d'où il part (from), le sommet d'arrivé (to) et le poids/distance entre ces deux sommets (weight).
 La structure chemin facilite l'écriture du résultat de l'algorithme étant constitué le sommet d'où l'on vient par le plus court chemin (from) et la distance minimale jusqu'à ce point depuis le sommet de départ depuis lequel on applique l'algorithme (weight).
 La structure data nous permet de stocker notre résultat pour un seul noeud (départ) c'est le noeud depuis lequel  on veut calculer tous les plus courts chemin avec les autres noeuds du graphe. routes c'est pour stocker les noeuds depuis lequels on passe , et distances , c'est la distance la plus courte depuis le noeuds départ a tous les noueds de graphes.
 
@@ -72,7 +72,7 @@ Voici dans les grandes lignes ce que réalise l'algorithme:
 
 /**Données renvoyées:**/
 
-Les chemins à empreunter pour chaque sommet depuis le sommet de départ sont stocké dans toutChemins qui est un map[int][]int. Tandis que les distances minimales pour ses différents sommet sont stockées dans distanceMin qui est un map[int]int.
+Les chemins à emprunter pour chaque sommet depuis le sommet de départ sont stockés dans toutChemins qui est un map[int][]int. Tandis que les distances minimales pour ses différents sommet sont stockées dans distanceMin qui est un map[int]int.
 Ces structures sont ensuite écrite dans un channel, permettant la synchronisation des goroutines  et de la centralisation de  tout les résultants des exécutions de cet algorithme pour tout les sommets comme sommet initial.
 
 ******************************************************************
